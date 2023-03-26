@@ -4,7 +4,7 @@ const connection = new Sequelize({
     host:"localhost",
     username:"root",
     database:"qlhb",
-    password:"secret",
+    password:"trantung2001",
     logging:false,
 })
 connection.authenticate().then(() => {

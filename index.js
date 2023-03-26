@@ -4,8 +4,10 @@ const app = express();
 var Web3 = require("web3");
 var des = require("./src/abis/Decentragram.json");
 var tran = require("./src/abis/Transcript.json");
+var auth = require("./src/abis/Auth.json");
 var bodyParser = require("body-parser");
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json())
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "content-type");
@@ -38,13 +40,17 @@ app.post("/login", async (req, res) => {
     const user = await User.findOne({
       where: { username: username, password: password },
     });
+
     if (user) {
-      res.status(200).send({
-        user: user.username,
-        message: "Đăng nhập thành công",
-      });
-    } else {
-      res.status(401).send("authorized");
+      const web3 = new Web3("HTTP://127.0.0.1:7545");
+      const networkId = await web3.eth.net.getId();
+      const networkData = auth.networks[networkId];
+      const au = new web3.eth.Contract(auth.abi, networkData.address);
+    
+       au.methods.getRole(user.privatekey).call().then(data=>res.send({
+        ...user,data
+       }))
+
     }
   } catch (e) {
     console.log(e);
@@ -53,15 +59,20 @@ app.post("/login", async (req, res) => {
 });
 app.post("/addUser", async (req, res) => {
   try {
-    const { path, description, username } = req.body;
-    const user = await User.findOne({ where: { username: username } });
+    const { address, role, username,password } = req.body;
+    await User.create({
+      username,
+      password,
+      privatekey:address
+    })
+    console.log("tun");
     const web3 = new Web3("HTTP://127.0.0.1:7545");
     const networkId = await web3.eth.net.getId();
-    const networkData = des.networks[networkId];
-    const decentragram = new web3.eth.Contract(des.abi, networkData.address);
-    decentragram.methods
-      .uploadImage(path, description)
-      .send({ from: user.privatekey, gas: 1000000 })
+    const networkData = auth.networks[networkId];
+    const au = new web3.eth.Contract(auth.abi, networkData.address);
+    au.methods
+      .addUser(role)
+      .send({ from: address, gas: 1000000 })
       .on("transactionHash", (hash) => {
         res.send("add user successful");
       });
@@ -135,7 +146,10 @@ app.get("/point", async (req, res) => {
     for (var i = 1; i <= imagesCount; i++) {
       const image = await decentragram.methods.points(i).call();
       const { id, idTeacher, idStudent, idSubject, point, author } = image;
-      images = [...images, { id, idTeacher, idStudent, idSubject, point, author }];
+      images = [
+        ...images,
+        { id, idTeacher, idStudent, idSubject, point, author },
+      ];
     }
     const data = images.filter(
       (item) => item.idTeacher === req.query.isTeacher && item.idSubject === "1"
