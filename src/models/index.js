@@ -26,7 +26,44 @@ connection.authenticate().then(() => {
         type: DataTypes.STRING,
     },
  });
- 
+ const Student = connection.define("students", {
+   name: {
+     type: DataTypes.STRING,
+     allowNull: false
+   },
+   address: {
+     type: DataTypes.STRING,
+     allowNull: false
+   },
+   phone: {
+       type: DataTypes.STRING,
+   },
+   email: {
+      type: DataTypes.STRING,
+  },
+});
+const Teacher = connection.define("teachers", {
+   name: {
+     type: DataTypes.STRING,
+     allowNull: false
+   },
+   address: {
+     type: DataTypes.STRING,
+     allowNull: false
+   },
+   phone: {
+       type: DataTypes.STRING,
+   },
+   email: {
+      type: DataTypes.STRING,
+  },
+});
+const Subject = connection.define("subjects", {
+   name: {
+     type: DataTypes.STRING,
+     allowNull: false
+   },
+});
  connection.sync().then(() => {
     console.log('Book table created successfully!');
  }).catch((error) => {
@@ -34,5 +71,8 @@ connection.authenticate().then(() => {
  });
  module.exports={
     connection,
-    User
+    User,
+    Student,
+    Teacher,
+    Subject
  }
